@@ -8,6 +8,21 @@
 
 typedef char byte;
 
+
+class LDisk{
+private:
+
+	Block disk[64];
+	BitMap bitMap;
+
+
+public: 
+
+
+};
+
+
+
 class Block {
 private:
 
@@ -15,13 +30,35 @@ private:
 
 public:
 
-	virtual byte& operator[](int i); 
+	byte& operator[](int i); 
+
+};
+
+class Directory{
+private:
+	//Pointer to the file descriptor in the LDisk
+	Block* directoryFileDescriptor;
+
+
+public:
+
+	//Print the directory
+	void print();
+
+	//Return descriptor index
+	int file(std::string fileName);
+
+	void addFile(std::string fileName);
+
+
 
 };
  
-class BitMap : public Block
+class BitMap
 {
 private:
+	
+	//Mask used to manipulate bits
 	const unsigned char MASK[8] = {
 
 		0x01,	//Bit 0
@@ -35,6 +72,9 @@ private:
 		
 	};
 
+	//Pointer to the first block in LDisk
+	Block* bitBlock;
+
 
 public:
 
@@ -42,13 +82,15 @@ public:
 	void setBit(int i, bool val);
 	bool getBit(int i);
 
+	//Next four free bits in the bit map
+	char freeBits[4];
 
 	BitMap();
 	
 
 };
 
-class DescriptorBank : public Block
+class DescriptorBank
 {
 public:
 
@@ -68,14 +110,6 @@ struct FileDescriptor
 
 
 
-class LDisk{
-private:
-
-	Block disk[64];
-
-
-public:
-};
 
 
 
