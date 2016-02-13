@@ -8,7 +8,7 @@
 
 typedef char byte;
 
-byte cache[7];
+Block cache[7];
 
 
 //Block containing 64 bytes
@@ -33,8 +33,8 @@ private:
 
 
 public: 
-	void read_block(int i, char *p);
-	void write_block(int i, char *p);
+	void read_block(int i, Block *p);
+	void write_block(int i, Block *p);
 
 
 };
@@ -99,7 +99,7 @@ private:
 	
 
 	//Pointer to the first block in LDisk
-	byte bits[8];
+	Block map;
 
 	bool getBit(int i);
 
@@ -110,7 +110,7 @@ public:
 	void setBit(int i, bool val);
 	int getFreeBit();
 	
-
+	Block getMap();
 	
 
 	BitMap();

@@ -17,3 +17,19 @@ char& Block::operator[](int i)
 	}
 	
 }
+
+void LDisk::read_block(int i, Block *p){
+
+	//Read block i into block at pointer p
+	*p = disk[i];
+
+
+}
+
+void LDisk::write_block(int i, Block *p){
+
+	//Write block at pointer p into block i
+	disk[i] = *p;
+
+
+}
