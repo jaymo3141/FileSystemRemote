@@ -8,21 +8,10 @@
 
 typedef char byte;
 
-
-class LDisk{
-private:
-
-	Block disk[64];
-	BitMap bitMap;
+byte cache[7];
 
 
-public: 
-
-
-};
-
-
-
+//Block containing 64 bytes
 class Block {
 private:
 
@@ -30,34 +19,68 @@ private:
 
 public:
 
-	byte& operator[](int i); 
+	byte& operator[](int i);
 
 };
 
-class Directory{
+
+//Logical Disk
+class LDisk{
 private:
-	//Pointer to the file descriptor in the LDisk
-	Block* directoryFileDescriptor;
+
+	Block disk[64];
+	
 
 
-public:
-
-	//Print the directory
-	void print();
-
-	//Return descriptor index
-	int file(std::string fileName);
-
-	void addFile(std::string fileName);
-
+public: 
+	void read_block(int i, char *p);
+	void write_block(int i, char *p);
 
 
 };
- 
+
+//Open File Table
+typedef struct OFTEntry{
+	Block buf;
+	int position;
+	int descriptorIndex;
+	int fileLength;
+}OFTEntry;
+
+OFTEntry OpenFileTable[4];
+
+
+
+
+
+
+
+//class Directory{
+//private:
+//	//Pointer to the file descriptor in the LDisk
+//	Block* directoryFileDescriptor;
+//
+//
+//public:
+//
+//	//Print the directory
+//	void print();
+//
+//	//Return descriptor index
+//	int file(std::string fileName);
+//
+//	void addFile(std::string fileName);
+//
+//
+//
+//};
+// 
+
+
 class BitMap
 {
 private:
-	
+
 	//Mask used to manipulate bits
 	const unsigned char MASK[8] = {
 
@@ -69,45 +92,51 @@ private:
 		0x20,	//Bit 5
 		0x40,	//Bit 6
 		0x80,	//Bit 7
-		
+
 	};
 
+	
+	
+
 	//Pointer to the first block in LDisk
-	Block* bitBlock;
+	byte bits[8];
+
+	bool getBit(int i);
 
 
 public:
 
 	//Bit manipulators
 	void setBit(int i, bool val);
-	bool getBit(int i);
+	int getFreeBit();
+	
 
-	//Next four free bits in the bit map
-	char freeBits[4];
+	
 
 	BitMap();
 	
 
 };
 
-class DescriptorBank
-{
-public:
-
-	FileDescriptor& getFileDescriptor(int i);
-
-
-
-
-
-};
-
-struct FileDescriptor
-{
-	byte* length;			//File length
-	byte* fileSegment[3];	//Location of each file segment
-};
-
+//
+//class DescriptorBank
+//{
+//public:
+//
+//	FileDescriptor& getFileDescriptor(int i);
+//
+//
+//
+//
+//
+//};
+//
+//struct FileDescriptor
+//{
+//	byte* length;			//File length
+//	byte* fileSegment[3];	//Location of each file segment
+//};
+//
 
 
 
