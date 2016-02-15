@@ -5,11 +5,10 @@
 #include <exception>
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
+#include <bitset>
 
-typedef char byte;
-
-Block cache[7];
-
+typedef unsigned char byte;
 
 //Block containing 64 bytes
 class Block {
@@ -20,6 +19,7 @@ private:
 public:
 
 	byte& operator[](int i);
+	Block();
 
 };
 
@@ -33,111 +33,91 @@ private:
 
 
 public: 
-	void read_block(int i, Block *p);
-	void write_block(int i, Block *p);
+	void read_block(int i, Block& p);
+	void write_block(int i, Block& p);
 
 
 };
 
 //Open File Table
-typedef struct OFTEntry{
+struct OFTEntry
+{
 	Block buf;
 	int position;
 	int descriptorIndex;
 	int fileLength;
-}OFTEntry;
 
-OFTEntry OpenFileTable[4];
-
-
+	OFTEntry();
+};
 
 
-
-
-
-//class Directory{
+//class OpenFileTable
+//{
 //private:
-//	//Pointer to the file descriptor in the LDisk
-//	Block* directoryFileDescriptor;
-//
-//
-//public:
-//
-//	//Print the directory
-//	void print();
-//
-//	//Return descriptor index
-//	int file(std::string fileName);
-//
-//	void addFile(std::string fileName);
+//	OFTEntry OpenFileTable[4];
 //
 //
 //
 //};
-// 
+
 
 
 class BitMap
 {
 private:
 
-	//Mask used to manipulate bits
-	const unsigned char MASK[8] = {
+	////Mask used to manipulate bits
+	//const unsigned char MASK[8] = {
 
-		0x01,	//Bit 0
-		0x02,	//Bit 1
-		0x04,	//Bit 2
-		0x08,	//Bit 3
-		0x10,	//Bit 4
-		0x20,	//Bit 5
-		0x40,	//Bit 6
-		0x80,	//Bit 7
+	//	0x01,	//Bit 0
+	//	0x02,	//Bit 1
+	//	0x04,	//Bit 2
+	//	0x08,	//Bit 3
+	//	0x10,	//Bit 4
+	//	0x20,	//Bit 5
+	//	0x40,	//Bit 6
+	//	0x80,	//Bit 7
 
-	};
+	//};
 
 	
 	
 
-	//Pointer to the first block in LDisk
-	Block map;
+	
+	Block bitMapContainer;
+	int leastSignificantBits;
+	int mostSignificantBits;
 
-	bool getBit(int i);
+	bool getBitAt(int bitNum);
 
 
 public:
 
-	//Bit manipulators
-	void setBit(int i, bool val);
-	int getFreeBit();
 	
-	Block getMap();
-	
+	void setBit(int i, bool val);	
+	int getNextOpenBit();			//Returns -1 if an open bit is not found
 
-	BitMap();
+	Block getBitMapBlock(){ return bitMapContainer; }
+	void printMap();
+
+	BitMap(Block b);
 	
 
 };
 
-//
-//class DescriptorBank
-//{
-//public:
-//
-//	FileDescriptor& getFileDescriptor(int i);
-//
-//
-//
-//
-//
-//};
-//
-//struct FileDescriptor
-//{
-//	byte* length;			//File length
-//	byte* fileSegment[3];	//Location of each file segment
-//};
-//
+struct FileDescriptorHandel
+{
+	int length;
+	int block1;
+	int block2;
+	int block3;
 
+};
+
+unsigned int BytesToInt(unsigned char b1, unsigned char b2, unsigned char b3, unsigned char b4);
+
+/*Test Drivers*/
+void BIT_MAP_TEST();
 
 
 
