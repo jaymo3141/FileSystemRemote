@@ -11,6 +11,21 @@ BitMap::BitMap(Block b) :
 
 }
 
+
+void BitMap::saveMapToContainer()
+{
+
+	for(int i = 0; i < 4; i++){
+		bitMapContainer[i] = (mostSignificantBits >> (24 - i*8)) & 255
+	}
+
+	for(int i = 4; i < 7; i++){
+		bitMapContainer[i] = (leastSignificantBits >> (24 - (i%4)*8)) & 255
+	}
+
+
+}
+
 void BitMap::setBit(int bitNum, bool val){
 
 	//Set 0 to 1
