@@ -20,6 +20,9 @@ public:
 
 	byte& operator[](int i);
 	Block();
+	Block(byte allBytes);
+	Block(const Block& B);
+	Block& operator=(const Block& right);
 
 };
 
@@ -112,12 +115,51 @@ struct FileDescriptorHandel
 	int block2;
 	int block3;
 
+	FileDescriptorHandel();
+
 };
 
-unsigned int BytesToInt(unsigned char b1, unsigned char b2, unsigned char b3, unsigned char b4);
+
+class DescriptorBank{
+
+private:
+	FileDescriptorHandel descriptorList[24];
+	Block descriptorBlocks[6];
+
+	
+
+public:
+	
+	void SetDesctriptorBlock(const int blockNum, const Block& b){ descriptorBlocks[blockNum] = b; }
+	Block GetDescriptorBlockAt(int num) const { return descriptorBlocks[num]; }
+
+	void BuildDescriptorList();
+	void WriteDescriptorListToBlocks();
+
+	void SetDescriptorHandelAt(int index, int length, int block1, int block2 = -1, int block3 = -1);
+	FileDescriptorHandel GetDescriptorHandelAt(int num) const { return descriptorList[num]; }
+
+	int GetFreeDescriptorIndex() const; //returns -1 if no free index found
+
+	
+
+
+
+};
+
+int BytesToInt(byte b1, byte b2, byte b3, byte b4);
+
+void IntToBytes(int num, byte& b1, byte& b2, byte& b3, byte& b4);
+
+void PrintDescriptorHandel(FileDescriptorHandel f);
+
+
 
 /*Test Drivers*/
 void BIT_MAP_TEST();
+void BYTES_TO_INT_TEST();
+void INT_TO_BYTES_TEST();
+void DESCRIPTOR_BANK_TEST();
 
 
 
