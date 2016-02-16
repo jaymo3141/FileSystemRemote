@@ -93,7 +93,7 @@ private:
 
 public:
 
-	
+	void saveMapToContainer();
 	void setBit(int i, bool val);	
 	int getNextOpenBit();			//Returns -1 if an open bit is not found
 
