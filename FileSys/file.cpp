@@ -425,14 +425,19 @@ void DESCRIPTOR_BANK_TEST()
 	db.SetDescriptorHandelAt(0, 2, 15, 31);
 	db.SetDescriptorHandelAt(1, 3, 7, 8, 3);
 	db.SetDescriptorHandelAt(2, 2, 2, 4 );
+	db.SetDescriptorHandelAt(3, 0);
 
 	FileDescriptorHandel testDescriptor2 = db.GetDescriptorHandelAt(0);
 	FileDescriptorHandel testDescriptor3 = db.GetDescriptorHandelAt(1);
 	FileDescriptorHandel testDescriptor4 = db.GetDescriptorHandelAt(2);
+	FileDescriptorHandel testDescriptor5 = db.GetDescriptorHandelAt(3);
+
 
 	PrintDescriptorHandel(testDescriptor2);
 	PrintDescriptorHandel(testDescriptor3);
 	PrintDescriptorHandel(testDescriptor4);
+	PrintDescriptorHandel(testDescriptor5);
+
 
 	std::cout << "Free Descriptor index: " << db.GetFreeDescriptorIndex() << std::endl;
 

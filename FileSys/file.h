@@ -54,14 +54,21 @@ struct OFTEntry
 };
 
 
-//class OpenFileTable
-//{
-//private:
-//	OFTEntry OpenFileTable[4];
-//
-//
-//
-//};
+class OpenFileTable
+{
+private:
+	OFTEntry OpenFileTable[4];
+
+
+
+};
+
+class DirectoryHandeler
+{
+
+
+
+};
 
 
 
@@ -136,7 +143,7 @@ public:
 	void BuildDescriptorList();
 	void WriteDescriptorListToBlocks();
 
-	void SetDescriptorHandelAt(int index, int length, int block1, int block2 = -1, int block3 = -1);
+	void SetDescriptorHandelAt(int index, int length, int block1 =-1, int block2 = -1, int block3 = -1);
 	FileDescriptorHandel GetDescriptorHandelAt(int num) const { return descriptorList[num]; }
 
 	int GetFreeDescriptorIndex() const; //returns -1 if no free index found
