@@ -1,6 +1,16 @@
 #include "file.h"
 
 
+OpenFileTable::OpenFileTable()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		oft[i].descriptorIndex = -1;
+		oft[i].fileLength = -1;
+		oft[i].position = -1;
+	}
+}
+
 FileDescriptorHandel::FileDescriptorHandel() :
 	length{ -1 },
 	block1{ -1 },

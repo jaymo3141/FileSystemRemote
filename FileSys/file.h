@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <bitset>
+#include <vector>
 
 typedef unsigned char byte;
 
@@ -57,7 +58,22 @@ struct OFTEntry
 class OpenFileTable
 {
 private:
-	OFTEntry OpenFileTable[4];
+	OFTEntry oft[4];
+
+	
+public:
+
+	int readFile(int index, std::vector<byte>& v, int numBytes);
+	int writeFile(int index, const std::vector<byte>& v, int numBytes);
+	void lseek(int index, int position);
+
+	void printDirectory();
+	int getFileDescriptorIndex(char* name);
+	void addFileToDirectory(char* name, int descriptorIndex);
+
+
+	OpenFileTable();
+
 
 
 
