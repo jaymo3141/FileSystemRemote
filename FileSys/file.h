@@ -9,7 +9,7 @@
 #include <bitset>
 #include <vector>
 #include <list>
-
+#include <deque>
 
 typedef unsigned char byte;
 
@@ -67,14 +67,17 @@ private:
 	
 public:
 
-	int readFile(int index, std::list<byte>& v, int numBytes);
-	int writeFile(int index, std::list<byte>& v, int numBytes);
+	int readFile(int index, std::deque<byte>& v, int numBytes);
+	int writeFile(int index, std::deque<byte>& v, int numBytes);
 	void lseek(int index, int position);
 
 	OFTEntry getOFTEntryAt(int index);
 	void setOFTEntryAt(int index, const Block& block, int position, int descriptorIndex, int fileLength);
-
+	void setFileLengthAt(int index, int fileLength);
+	void setDescriptorIndexAt(int index, int descriptorIndex);
 	
+	int getFileLengthAt(int index);
+	int getDescriptorIndexAt(int index);
 
 
 	OpenFileTable();
@@ -124,6 +127,7 @@ public:
 	Block getBitMapBlock(){ return bitMapContainer; }
 	void printMap();
 
+	BitMap();
 	BitMap(Block b);
 	
 
@@ -157,6 +161,13 @@ public:
 	void WriteDescriptorListToBlocks();
 
 	void SetDescriptorHandelAt(int index, int length, int block1 =-1, int block2 = -1, int block3 = -1);
+	void setBLock1At(int index, int block1);
+	void setBLock2At(int index, int block2);
+	void setBLock3At(int index, int block3);
+
+
+
+
 	FileDescriptorHandel GetDescriptorHandelAt(int num) const { return descriptorList[num]; }
 
 	int GetFreeDescriptorIndex() const; //returns -1 if no free index found
@@ -173,12 +184,18 @@ class SystemSimulation
 {
 private:
 	OpenFileTable oft;
+	LDisk mainDisk;
+	BitMap bitMap;
+	DescriptorBank descriptorBank;
+
+
 
 
 public:
 	void printDirectory();
 	int getFileDescriptorIndex(char* name);
 	void addFileToDirectory(char* name, int descriptorIndex);
+	
 
 };
 
