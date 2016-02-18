@@ -8,8 +8,13 @@
 #include <cmath>
 #include <bitset>
 #include <vector>
+#include <list>
+
 
 typedef unsigned char byte;
+
+typedef std::list<byte>::iterator ITERATOR;
+
 
 //Block containing 64 bytes
 class Block {
@@ -26,7 +31,6 @@ public:
 	Block& operator=(const Block& right);
 
 };
-
 
 //Logical Disk
 class LDisk{
@@ -54,33 +58,27 @@ struct OFTEntry
 	OFTEntry();
 };
 
-
 class OpenFileTable
 {
 private:
 	OFTEntry oft[4];
+	
 
 	
 public:
 
-	int readFile(int index, std::vector<byte>& v, int numBytes);
-	int writeFile(int index, const std::vector<byte>& v, int numBytes);
+	int readFile(int index, std::list<byte>& v, int numBytes);
+	int writeFile(int index, std::list<byte>& v, int numBytes);
 	void lseek(int index, int position);
 
-	void printDirectory();
-	int getFileDescriptorIndex(char* name);
-	void addFileToDirectory(char* name, int descriptorIndex);
+	OFTEntry getOFTEntryAt(int index);
+	void setOFTEntryAt(int index, const Block& block, int position, int descriptorIndex, int fileLength);
+
+	
 
 
 	OpenFileTable();
 
-
-
-
-};
-
-class DirectoryHandeler
-{
 
 
 
@@ -142,7 +140,6 @@ struct FileDescriptorHandel
 
 };
 
-
 class DescriptorBank{
 
 private:
@@ -170,6 +167,21 @@ public:
 
 };
 
+
+
+class SystemSimulation
+{
+private:
+	OpenFileTable oft;
+
+
+public:
+	void printDirectory();
+	int getFileDescriptorIndex(char* name);
+	void addFileToDirectory(char* name, int descriptorIndex);
+
+};
+
 int BytesToInt(byte b1, byte b2, byte b3, byte b4);
 
 void IntToBytes(int num, byte& b1, byte& b2, byte& b3, byte& b4);
@@ -178,11 +190,14 @@ void PrintDescriptorHandel(FileDescriptorHandel f);
 
 
 
+
+
 /*Test Drivers*/
 void BIT_MAP_TEST();
 void BYTES_TO_INT_TEST();
 void INT_TO_BYTES_TEST();
 void DESCRIPTOR_BANK_TEST();
+void OPEN_FILE_TABLE_TEST();
 
 
 

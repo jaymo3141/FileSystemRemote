@@ -1,7 +1,7 @@
 #include "file.h"
 
 
-OpenFileTable::OpenFileTable()
+OpenFileTable::OpenFileTable()	
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -9,6 +9,68 @@ OpenFileTable::OpenFileTable()
 		oft[i].fileLength = -1;
 		oft[i].position = -1;
 	}
+}
+
+int OpenFileTable::readFile(int index, std::list<byte>& data, int numBytes)
+{
+
+	int bytesRead{ 0 };
+
+	//read numBytes from the buf into v
+	for (int i = 0; i < numBytes; i++)
+	{
+		if (oft[index].position < oft[index].fileLength)
+		{
+			data.push_back(oft[index].buf[ (oft[index].position) % 64 ]);
+			oft[index].position++;
+			bytesRead++;
+		}
+
+		else
+			break;
+	}
+	
+	return bytesRead;
+}
+
+int OpenFileTable::writeFile(int index,std::list<byte>& data, int numBytes)
+{
+	int bytesWritten{ 0 };
+
+	//wrtie numBytes from the data into buf
+	for (int i = 0; i < numBytes; i++)
+	{
+		if (oft[index].position < oft[index].fileLength)
+		{
+			oft[index].buf[(oft[index].position) % 64] = data.front();
+			data.pop_front();
+			oft[index].position++;
+			bytesWritten++;
+		}
+
+		else
+			break;
+	}
+
+	return bytesWritten;
+}
+
+OFTEntry OpenFileTable::getOFTEntryAt(int index)
+{
+	return oft[index];
+}
+
+void OpenFileTable::setOFTEntryAt(int index, const Block& block, int position, int descriptorIndex, int fileLength)
+{
+	oft[index].buf = block;
+	oft[index].position = position;
+	oft[index].descriptorIndex = descriptorIndex;
+	oft[index].fileLength = fileLength;
+}
+
+void OpenFileTable::lseek(int index, int position)
+{
+	oft[index].position = position;
 }
 
 FileDescriptorHandel::FileDescriptorHandel() :
@@ -271,6 +333,31 @@ void PrintDescriptorHandel(FileDescriptorHandel f)
 
 }
 
+void printDirectory()
+{}
+
+int SystemSimulation::getFileDescriptorIndex(char* name)
+{
+	std::list<byte> cache;
+	std::list<byte>::iterator it = cache.begin();
+
+	oft.readFile(0, cache, 8);
+
+	if (*(it++) == *name &&
+		*(it++) == *(name + 1) &&
+		*(it++) == *(name + 2) &&
+		*(it++) == *(name + 3))
+	{
+		return BytesToInt(*(it++), *(it++), *(it++), *(it));
+	}
+	
+
+
+
+}
+
+void addFileToDirectory(char* name, int descriptorIndex)
+{}
 
 /*Test Drivers*/
 
@@ -460,6 +547,45 @@ void DESCRIPTOR_BANK_TEST()
 	}
 			
 	std::cout << "EXITING DESCRIPTOR_BANK_TEST" << std::endl << std::endl;
+
+
+}
+
+void OPEN_FILE_TABLE_TEST()
+{
+
+
+	std::cout << "ENTERING OPEN_FILE_TABLE_TEST" << std::endl << std::endl;
+
+	Block b1(127);
+	Block b2(65);
+	Block b3(15);
+	Block b4(255);
+
+	OpenFileTable oft;
+
+	oft.setOFTEntryAt(0, b1, 0, 0, 64);
+	oft.setOFTEntryAt(1, b2, 62, 2, 64);
+	oft.setOFTEntryAt(2, b3, 126, 4, 64);
+	oft.setOFTEntryAt(3, b4, 33, 5, 64);
+
+	std::list<byte> testList;
+	
+
+	oft.readFile(0, testList, 10);
+
+	std::cout << "Following numbers should be 127" << std::endl;
+
+	for (auto it = testList.begin(); it != testList.end(); it++)
+	{
+		std::cout << (int)*it << std::endl;
+	}
+
+	testList.clear();
+
+
+
+	std::cout << "EXITING OPEN_FILE_TABLE_TEST" << std::endl << std::endl;
 
 
 }
