@@ -19,15 +19,13 @@ int OpenFileTable::readFile(int index, std::deque<byte>& data, int numBytes)
 	//read numBytes from the buf into v
 	for (int i = 0; i < numBytes; i++)
 	{
-		if (oft[index].position < oft[index].fileLength)
-		{
-			data.push_back(oft[index].buf[ (oft[index].position) % 64 ]);
-			oft[index].position++;
-			bytesRead++;
-		}
+		
+		data.push_back(oft[index].buf[ (oft[index].position) % 64 ]);
+		oft[index].position++;
+		bytesRead++;
+		
 
-		else
-			break;
+		
 	}
 	
 	return bytesRead;
@@ -40,16 +38,19 @@ int OpenFileTable::writeFile(int index,std::deque<byte>& data, int numBytes)
 	//wrtie numBytes from the data into buf
 	for (int i = 0; i < numBytes; i++)
 	{
-		if (oft[index].position < oft[index].fileLength)
-		{
+		
+		//increase the file length if writting past end of file
+		if (oft[index].position == oft[index].fileLength)
+			oft[index].fileLength++;
+			
+
 			oft[index].buf[(oft[index].position) % 64] = data.front();
 			data.pop_front();
 			oft[index].position++;
 			bytesWritten++;
-		}
+		
 
-		else
-			break;
+		
 	}
 
 	return bytesWritten;
@@ -68,7 +69,7 @@ void OpenFileTable::setOFTEntryAt(int index, const Block& block, int position, i
 	oft[index].fileLength = fileLength;
 }
 
-void OpenFileTable::lseek(int index, int position)
+void OpenFileTable::setPositionAt(int index, int position)
 {
 	oft[index].position = position;
 }
@@ -83,6 +84,11 @@ void OpenFileTable::setDescriptorIndexAt(int index, int descriptorIndex)
 	oft[index].descriptorIndex = descriptorIndex;
 }
 
+void OpenFileTable::setBlockAt(int index, const Block& block)
+{
+	oft[index].buf = block;
+}
+
 int OpenFileTable::getFileLengthAt(int index)
 {
 	return oft[index].fileLength;
@@ -92,6 +98,30 @@ int OpenFileTable::getDescriptorIndexAt(int index)
 {
 	return oft[index].descriptorIndex;
 }
+
+Block& OpenFileTable::getBlockRefAt(int index)
+{
+	return oft[index].buf;
+}
+
+int OpenFileTable::getLowestFreeIndex()
+{
+
+	for (int i = 0; i < 4; i++)
+	{
+		if (oft[i].descriptorIndex == -1)
+			return i;
+	}
+
+	return -1;
+
+}
+
+int OpenFileTable::getPositionAt(int index)
+{
+	return oft[index].position;
+}
+
 
 
 FileDescriptorHandel::FileDescriptorHandel() :
@@ -103,6 +133,7 @@ FileDescriptorHandel::FileDescriptorHandel() :
 {
 
 }
+
 
 void DescriptorBank::BuildDescriptorList()
 {
@@ -160,21 +191,31 @@ int DescriptorBank::GetFreeDescriptorIndex() const
 
 }
 
+void DescriptorBank::setLengthAt(int index, int length)
+{
+	descriptorList[index].length = length;
+
+}
+
+
 void DescriptorBank::setBLock1At(int index, int block1)
 {
 	descriptorList[index].block1 = block1;
 }
+
 void DescriptorBank::setBLock2At(int index, int block2)
 {
 	descriptorList[index].block1 = block2;
 }
+
 void DescriptorBank::setBLock3At(int index, int block3)
 {
 	descriptorList[index].block1 = block3;
 }
 
+
 BitMap::BitMap() :
-	leastSignificantBits{ 0 },
+	leastSignificantBits{ 127 },
 	mostSignificantBits{ 0 }
 {
 
@@ -265,7 +306,7 @@ void BitMap::printMap(){
 Block::Block()
 {
 	for (int i = 0; i < 64; i++){
-		mem[i] = 0;
+		mem[i] = 255;
 	}
 }
 
@@ -343,12 +384,407 @@ OFTEntry::OFTEntry() :
 {}
 
 
+
+
+int SystemSimulation::getFileDescriptorIndex(char* name)
+{
+	std::deque<byte> cache;
+	OFTEntry dir = oft.getOFTEntryAt(0);
+	FileDescriptorHandel directoryDescriptor = descriptorBank.GetDescriptorHandelAt(0);
+
+	oft.setPositionAt(0, 0);
+
+	oft.readFile(0, cache, 64);
+
+	for (int i = 0, imod = 0; i < dir.fileLength; i++){
+
+		imod = i % 64;
+
+		if (cache[imod] == *name &&
+			cache[imod + 1] == *(name + 1) &&
+			cache[imod + 2] == *(name + 2) &&
+			cache[imod + 3] == *(name + 3))
+		{
+			return BytesToInt(cache[imod + 4], cache[imod + 5], cache[imod + 6], cache[imod + 7]);
+		}
+
+		switch (i)
+		{
+		case 64:
+			mainDisk.write_block(directoryDescriptor.block1, oft.getBlockRefAt(0));
+			mainDisk.read_block(directoryDescriptor.block2, oft.getBlockRefAt(0));
+			cache.clear();
+			oft.readFile(0, cache, 64);
+			break;
+		case 128:
+			mainDisk.write_block(directoryDescriptor.block2, oft.getBlockRefAt(0));
+			mainDisk.read_block(directoryDescriptor.block3, oft.getBlockRefAt(0));
+			cache.clear();
+			oft.readFile(0, cache, 64);
+			break;
+		default:
+			break;
+
+		}
+
+
+
+	}
+
+
+}
+
+void SystemSimulation::addFileToDirectory(char* name, int descriptorIndex)
+{
+
+	std::deque<byte> cache;
+		
+	cache.push_back(*name);
+	cache.push_back(*(name + 1));
+	cache.push_back(*(name + 2));
+	cache.push_back(*(name + 3));
+
+	byte b1{0}, b2{0}, b3{0}, b4{0};
+
+	IntToBytes(descriptorIndex, b1, b2, b3, b4);
+
+	cache.push_back(b1);
+	cache.push_back(b2);
+	cache.push_back(b3);
+	cache.push_back(b4);
+
+	write(0, cache, 8);
+
+		
+}
+
+void SystemSimulation::printDirectory()
+{
+
+
+	std::deque<byte> cache;
+	int dir = oft.getFileLengthAt(0);
+	
+	lseek(0, 0);
+
+	for (int i = 0; i < dir; i += 8){
+
+		read(0, cache, 8);
+
+		std::cout << "File Name: " << cache[0] << cache[1] << cache[2] << cache[3] << std::endl
+			<< "Descriptor: " << BytesToInt(cache[4], cache[5], cache[6], cache[7]) << std::endl;
+
+		cache.clear();
+	}
+		
+				
+		
+	
+
+		/*switch (i)
+		{
+		case 64:
+			mainDisk.write_block(directoryDescriptor.block1, oft.getBlockRefAt(0));
+			mainDisk.read_block(directoryDescriptor.block2, oft.getBlockRefAt(0));
+			cache.clear();
+			oft.readFile(0, cache, 64);
+			break;
+		case 128:
+			mainDisk.write_block(directoryDescriptor.block2, oft.getBlockRefAt(0));
+			mainDisk.read_block(directoryDescriptor.block3, oft.getBlockRefAt(0));
+			cache.clear();
+			oft.readFile(0, cache, 64);
+			break;
+		default:
+			break;
+
+		}*/
+
+
+
+	
+
+}
+
+int SystemSimulation::lseek(int index, int position)
+{
+
+	if (position > oft.getFileLengthAt(index))
+	{	
+		ss << "error";
+		return -1;
+	}
+
+
+	FileDescriptorHandel fileDescriptor = descriptorBank.GetDescriptorHandelAt(oft.getDescriptorIndexAt(index));
+
+
+	
+
+	if (oft.getPositionAt(index) < 64) 
+	{
+		mainDisk.write_block(fileDescriptor.block1, oft.getBlockRefAt(index));
+	}
+
+	else if (oft.getPositionAt(index) > 63 && oft.getPositionAt(index) < 128)
+	{
+		mainDisk.write_block(fileDescriptor.block2, oft.getBlockRefAt(index));
+
+	}
+
+	else if (oft.getPositionAt(index) < 128)
+	{
+		mainDisk.write_block(fileDescriptor.block3, oft.getBlockRefAt(index));
+
+	}
+
+
+	if (position < 64)
+	{
+		mainDisk.write_block(fileDescriptor.block1, oft.getBlockRefAt(index));
+	}
+
+	else if (position > 63 && position < 128)
+	{
+		mainDisk.write_block(fileDescriptor.block2, oft.getBlockRefAt(index));
+
+	}
+
+	else if (position < 128)
+	{
+		mainDisk.write_block(fileDescriptor.block3, oft.getBlockRefAt(index));
+
+	}
+
+
+	oft.setPositionAt(index, position);
+
+	return oft.getPositionAt(index);
+
+}
+
+int SystemSimulation::read(int index, std::deque<byte>& mem, int numBytes)
+{
+	int pos{ oft.getPositionAt(index) };
+	int bytesRead{ 0 };
+	int actualBytesToRead{0};
+
+	//Check for reading past eof
+	if (pos + numBytes > oft.getFileLengthAt(index))
+	{
+		actualBytesToRead = oft.getFileLengthAt(index) - pos;
+	}
+	else
+		actualBytesToRead = numBytes;
+	
+
+	if (pos < 64 && pos + actualBytesToRead > 64)
+	{
+		bytesRead += oft.readFile(index, mem, 64 - pos);
+		lseek(index, 64);
+		if (pos + actualBytesToRead - 64 > 64)
+		{
+			bytesRead += oft.readFile(index, mem, 64);
+			lseek(index, 128);
+			bytesRead += oft.readFile(index, mem, pos + actualBytesToRead - 128);
+		}
+		else
+			bytesRead += oft.readFile(index, mem, (pos + actualBytesToRead) - 64);
+	}
+	else if (pos < 128 && pos + actualBytesToRead > 128)
+	{
+		bytesRead += oft.readFile(index, mem, 128 - pos);
+		lseek(index, 128);
+		bytesRead += oft.readFile(index, mem, (pos + actualBytesToRead) - 128);
+	}
+
+	else
+		return oft.readFile(index, mem, actualBytesToRead);
+	
+
+	return actualBytesToRead;
+
+}
+
+int SystemSimulation::write(int index, std::deque<byte>& mem, int numBytes)
+{
+
+	int pos{ oft.getPositionAt(index) };
+	int bytesWritten{ 0 };
+	int actualBytesToWrite{ 0 };
+	bool newBlock2{ false };
+	bool newBlock3{ false };
+	int openBit;
+
+	int fileDescriptorIndex = oft.getDescriptorIndexAt(index);
+	FileDescriptorHandel fd = descriptorBank.GetDescriptorHandelAt(fileDescriptorIndex);
+
+	
+
+	//Check for reading past eof
+	if (pos + numBytes > 192)
+	{
+		actualBytesToWrite = 192 - pos;
+	}
+	else
+		actualBytesToWrite = numBytes;
+
+
+	if (pos <= 64 && pos + actualBytesToWrite > 64)
+	{
+
+		//allocate another block if expanding the file
+		if (pos + numBytes > oft.getFileLengthAt(index))
+		{
+			allocateSecondBlock(fileDescriptorIndex);
+		}
+
+		bytesWritten += oft.writeFile(index, mem, 64 - pos);
+		lseek(index, 64);
+
+		if (pos + actualBytesToWrite - 64 > 64)
+		{
+			//allocate another block if expanding the file
+			if (pos + numBytes > oft.getFileLengthAt(index))
+				allocateThirdBlock(fileDescriptorIndex);
+
+			bytesWritten += oft.writeFile(index, mem, 64);
+			lseek(index, 128);
+			bytesWritten += oft.writeFile(index, mem, pos + actualBytesToWrite - 128);
+		}
+		else
+			bytesWritten += oft.writeFile(index, mem, (pos + actualBytesToWrite) - 64);
+	}
+	else if (pos <= 128 && pos + actualBytesToWrite > 128)
+	{
+		//allocate another block if expanding the file
+		if (pos + numBytes > oft.getFileLengthAt(index))
+			allocateThirdBlock(fileDescriptorIndex);
+
+		bytesWritten += oft.writeFile(index, mem, 128 - pos);
+		lseek(index, 128);
+		bytesWritten += oft.writeFile(index, mem, (pos + actualBytesToWrite) - 128);
+	}
+
+	else
+	{	
+		bytesWritten = oft.writeFile(index, mem, actualBytesToWrite);
+		descriptorBank.setLengthAt(oft.getDescriptorIndexAt(index), oft.getFileLengthAt(index) + actualBytesToWrite);
+		return bytesWritten;
+	}
+
+	descriptorBank.setLengthAt(oft.getDescriptorIndexAt(index), oft.getFileLengthAt(index) + bytesWritten);
+	return bytesWritten;
+
+
+
+}
+
+void SystemSimulation::close(int index)
+{
+	
+	FileDescriptorHandel fd = descriptorBank.GetDescriptorHandelAt(oft.getDescriptorIndexAt(index));
+	int blockAddress; 
+	int pos = oft.getPositionAt(index);
+	Block emptyBlock(255);
+
+	if (pos < 64)
+		blockAddress = fd.block1;
+	else if (pos > 64 && pos < 128)
+		blockAddress = fd.block2;
+	else
+		blockAddress = fd.block3;
+
+	mainDisk.write_block(blockAddress, oft.getBlockRefAt(index));
+
+	oft.setOFTEntryAt(index, emptyBlock, -1, -1, -1);
+
+}
+
+void SystemSimulation::save(std::string fileName)
+{
+
+	std::ofstream fout;
+
+	fout.open(fileName);
+
+	//close all files
+	for (int i = 3; i > 0; i--)
+	{
+		if (oft.getFileLengthAt(i) != -1)
+			close(i);
+	}
+
+	//copy bitmap back to the LDisk
+	bitMap.saveMapToContainer();
+	mainDisk.write_block(0, bitMap.getBitMapBlock());
+
+	//copy descriptor bank back to ldisk
+	descriptorBank.WriteDescriptorListToBlocks();
+	
+	for (int i = 0; i < 6; i++)
+	{
+		mainDisk.write_block(i + 1, descriptorBank.GetDescriptorBlockAt(i));
+	}
+
+	Block temp;
+
+	for (int i = 0; i < 64; i++)
+	{
+		mainDisk.read_block(i, temp);
+		for (int j = 0; j < 64; j++)
+		{
+
+			fout << temp[j];
+
+		}
+	}
+
+
+
+}
+
+
+void SystemSimulation::allocateSecondBlock(int descriptorIndex)
+{
+	int openBit = bitMap.getNextOpenBit();
+	descriptorBank.setBLock2At(descriptorIndex, openBit);
+	bitMap.setBit(openBit, true);
+}
+
+void SystemSimulation::allocateThirdBlock(int descriptorIndex)
+{
+	int openBit = bitMap.getNextOpenBit();
+	descriptorBank.setBLock3At(descriptorIndex, openBit);
+	bitMap.setBit(openBit, true);
+}
+
+
+
+SystemSimulation::SystemSimulation()
+{
+	//Sets up the directory
+	oft.setDescriptorIndexAt(0, 0);
+	oft.setFileLengthAt(0, 0);
+	oft.setPositionAt(0, 0);
+
+	descriptorBank.setLengthAt(0, 0);
+
+	int openBit = bitMap.getNextOpenBit();
+	bitMap.setBit(openBit, true);
+
+	descriptorBank.setBLock1At(0, openBit);
+
+
+}
+
+
 int BytesToInt(byte b1, byte b2, byte b3, byte b4)
 {
-	unsigned int a{ b1 };
-	unsigned int b{ b2*(unsigned int)pow(2, 8) };
-	unsigned int c{ b3*(unsigned int)pow(2, 16) };
-	unsigned int d{ b4*(unsigned int)pow(2, 24) };
+	unsigned int a{ b4 };
+	unsigned int b{ b3*(unsigned int)pow(2, 8) };
+	unsigned int c{ b2*(unsigned int)pow(2, 16) };
+	unsigned int d{ b1*(unsigned int)pow(2, 24) };
 
 	return (a + b + c + d);
 
@@ -373,188 +809,6 @@ void PrintDescriptorHandel(FileDescriptorHandel f)
 
 }
 
-
-int SystemSimulation::getFileDescriptorIndex(char* name)
-{
-	std::deque<byte> cache;
-	OFTEntry dir = oft.getOFTEntryAt(0);
-	FileDescriptorHandel directoryDescriptor = descriptorBank.GetDescriptorHandelAt(0);
-
-	oft.lseek(0, 0);
-
-	oft.readFile(0, cache, 64);
-
-	for (int i = 0, imod = 0; i < dir.fileLength; i++){
-
-		imod = i % 64;
-
-		if (cache[imod] == *name &&
-			cache[imod + 1] == *(name + 1) &&
-			cache[imod + 2] == *(name + 2) &&
-			cache[imod + 3] == *(name + 3))
-		{
-			return BytesToInt(cache[imod + 4], cache[imod + 5], cache[imod + 6], cache[imod + 7]);
-		}
-
-		switch (i)
-		{
-		case 64:
-			mainDisk.write_block(directoryDescriptor.block1, oft[0].buf);
-			mainDisk.read_block(directoryDescriptor.block2, oft[0].buf);
-			cache.clear();
-			oft.readFile(0, cache, 64);
-			break;
-		case 128:
-			mainDisk.write_block(directoryDescriptor.block2, oft[0].buf);
-			mainDisk.read_block(directoryDescriptor.block3, oft[0].buf);
-			cache.clear();
-			oft.readFile(0, cache, 64);
-			break;
-		default:
-			break;
-
-		}
-
-
-
-	}
-
-
-}
-
-void SystemSimulation::addFileToDirectory(char* name, int descriptorIndex)
-{
-
-
-	std::deque<byte> cache;
-	OFTEntry dir = oft.getOFTEntryAt(0);
-	FileDescriptorHandel directoryDescriptor = descriptorBank.GetDescriptorHandelAt(0);
-
-	oft.lseek(0, 0);
-
-	oft.readFile(0, cache, 64);
-
-	switch (dir.fileLength)
-	{
-	case 64:
-		int openBlock = bitMap.getNextOpenBit();
-		descriptorBank.setBLock2At(0, openBlock);
-		bitMap.setBit(openBlock, true);
-		break;
-
-	case 128:
-		int openBlock = bitMap.getNextOpenBit();
-		descriptorBank.setBLock3At(0, openBlock);
-		bitMap.setBit(openBlock, true);
-	default:
-		break;
-
-	}
-
-	for (int i = 0, imod = 0; i < dir.fileLength; i+=8){
-
-		imod = i % 64;
-
-		//write the file data to the free directory slot
-		if (cache[imod] == 255)
-		{
-			cache[imod] = *name;
-			cache[imod + 1] = *(name + 1);
-			cache[imod + 2] = *(name + 2);
-			cache[imod + 3] = *(name + 3);
-			IntToBytes(descriptorIndex, cache[imod + 4], cache[imod + 5], cache[imod + 6], cache[imod + 7]);
-
-			oft.setFileLengthAt(0, dir.fileLength += 8);
-			
-			break;
-		}
-
-
-
-		switch (i)
-		{
-		case 64:
-			mainDisk.write_block(directoryDescriptor.block1, oft[0].buf);
-			mainDisk.read_block(directoryDescriptor.block2, oft[0].buf);
-			cache.clear();
-			oft.readFile(0, cache, 64);
-			break;
-		case 128:
-			mainDisk.write_block(directoryDescriptor.block2, oft[0].buf);
-			mainDisk.read_block(directoryDescriptor.block3, oft[0].buf);
-			cache.clear();
-			oft.readFile(0, cache, 64);
-			break;
-		default:
-			break;
-
-		}
-
-
-
-	}
-}
-
-void SystemSimulation::printDirectory()
-{
-
-
-	std::deque<byte> cache;
-	OFTEntry dir = oft.getOFTEntryAt(0);
-	FileDescriptorHandel directoryDescriptor = descriptorBank.GetDescriptorHandelAt(0);
-
-	oft.lseek(0, 0);
-
-	oft.readFile(0, cache, 64);
-
-	for (int i = 0, imod = 0; i < dir.fileLength; i += 8){
-
-		imod = i % 64;
-
-		
-		
-		std::cout << "File Name: "
-					<< cache[imod]
-					<< cache[imod + 1] 
-					<< cache[imod + 2]
-					<< cache[imod + 3]
-					<< " File Length: "
-					<< BytesToInt(cache[imod + 4], cache[imod + 5], cache[imod + 6], cache[imod + 7])
-					<< std::endl;
-			
-
-			
-		
-
-
-
-		switch (i)
-		{
-		case 64:
-			mainDisk.write_block(directoryDescriptor.block1, oft[0].buf);
-			mainDisk.read_block(directoryDescriptor.block2, oft[0].buf);
-			cache.clear();
-			oft.readFile(0, cache, 64);
-			break;
-		case 128:
-			mainDisk.write_block(directoryDescriptor.block2, oft[0].buf);
-			mainDisk.read_block(directoryDescriptor.block3, oft[0].buf);
-			cache.clear();
-			oft.readFile(0, cache, 64);
-			break;
-		default:
-			break;
-
-		}
-
-
-
-	}
-
-}
-
-void addFileToDirectory(char* name, int descriptorIndex)
-{}
 
 /*Test Drivers*/
 
@@ -750,7 +1004,7 @@ void DESCRIPTOR_BANK_TEST()
 
 void OPEN_FILE_TABLE_TEST()
 {
-
+	
 
 	std::cout << "ENTERING OPEN_FILE_TABLE_TEST" << std::endl << std::endl;
 
@@ -761,28 +1015,100 @@ void OPEN_FILE_TABLE_TEST()
 
 	OpenFileTable oft;
 
-	oft.setOFTEntryAt(0, b1, 0, 0, 64);
-	oft.setOFTEntryAt(1, b2, 62, 2, 64);
-	oft.setOFTEntryAt(2, b3, 126, 4, 64);
-	oft.setOFTEntryAt(3, b4, 33, 5, 64);
+	oft.setOFTEntryAt(0, b1, 0, 0, 10);
+	oft.setOFTEntryAt(1, b2, 0, 2, 0);
+	oft.setOFTEntryAt(2, b3, 0, 4, 20);
+	oft.setOFTEntryAt(3, b4, 0, 5, 0);
 
-	std::list<byte> testList;
+	std::deque<byte> testList;
 	
 
 	oft.readFile(0, testList, 10);
 
 	std::cout << "Following numbers should be 127" << std::endl;
 
-	for (auto it = testList.begin(); it != testList.end(); it++)
+	for (int i = 0; i < testList.size(); i++)
 	{
-		std::cout << (int)*it << std::endl;
+		std::cout << (int)testList[i] << std::endl;
 	}
+
+	std::cout << std::endl;
+
+	oft.writeFile(1, testList, 10);
 
 	testList.clear();
 
+	oft.setPositionAt(1, 0);
+
+	oft.readFile(1, testList, 10);
+
+	std::cout << "Following numbers should be 127" << std::endl;
+
+	for (int i = 0; i < testList.size(); i++)
+	{
+		std::cout << (int)testList[i] << std::endl << std::endl;
+	}
+
+	std::cout << "Block 0 \n" << "File Length (10): " << oft.getFileLengthAt(0) << "\nDescriptor Index " << oft.getDescriptorIndexAt(0) << "\n";
+
+	std::cout << "Block 1 \n" << "File Length (10): " << oft.getFileLengthAt(1) << "\nDescriptor Index " << oft.getDescriptorIndexAt(1) << "\n";
+
+
+	std::deque<byte> test2;
+
+	oft.readFile(2, test2, 20);
+
+	std::cout << "Following numbers should be 15" << std::endl;
+
+	for (int i = 0; i < test2.size(); i++)
+	{
+		std::cout << (int)test2[i] << std::endl << std::endl;
+	}
+
+	oft.writeFile(3, test2, 20);
+
+	Block testBlock = oft.getBlockRefAt(3);
+
+	std::cout << "Following numbers should be 15" << std::endl;
+
+	for (int i = 0; i < 15; i++)
+	{
+		std::cout << (int)testBlock[i] << std::endl << std::endl;
+	}
 
 
 	std::cout << "EXITING OPEN_FILE_TABLE_TEST" << std::endl << std::endl;
 
 
 }
+
+void SYSTEM_SIMULATION_TEST()
+{
+
+	std::cout << "ENTERING SYSTEM_SIMULATION_TEST" << std::endl;
+
+
+	SystemSimulation sys;
+
+	//sys.addFileToDirectory("abc", 1);
+	//sys.addFileToDirectory("abcd", 2);
+	//sys.addFileToDirectory("efgh", 3);
+
+	//sys.printDirectory();
+
+	//std::cout << std::endl << std::endl;
+
+	//fill up the directory
+
+	for (int i = 0; i < 10; i++)
+	{
+		sys.addFileToDirectory("test", i);
+	}
+	
+	sys.printDirectory();
+
+
+	std::cout << "EXITING SYSTEM_SIMULATION_TEST" << std::endl;
+
+}
+

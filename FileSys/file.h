@@ -10,6 +10,8 @@
 #include <vector>
 #include <list>
 #include <deque>
+#include <sstream>
+#include <fstream>
 
 typedef unsigned char byte;
 
@@ -44,6 +46,9 @@ public:
 	void read_block(int i, Block& p);
 	void write_block(int i, Block& p);
 
+	
+
+
 
 };
 
@@ -69,15 +74,22 @@ public:
 
 	int readFile(int index, std::deque<byte>& v, int numBytes);
 	int writeFile(int index, std::deque<byte>& v, int numBytes);
-	void lseek(int index, int position);
+	
 
 	OFTEntry getOFTEntryAt(int index);
 	void setOFTEntryAt(int index, const Block& block, int position, int descriptorIndex, int fileLength);
+
+	void setBlockAt(int index, const Block& block);
 	void setFileLengthAt(int index, int fileLength);
 	void setDescriptorIndexAt(int index, int descriptorIndex);
+	void setPositionAt(int index, int position);
 	
 	int getFileLengthAt(int index);
 	int getDescriptorIndexAt(int index);
+	int getPositionAt(int index);
+	Block& getBlockRefAt(int index);
+
+	int getLowestFreeIndex(); // returns -1 if none found
 
 
 	OpenFileTable();
@@ -161,6 +173,7 @@ public:
 	void WriteDescriptorListToBlocks();
 
 	void SetDescriptorHandelAt(int index, int length, int block1 =-1, int block2 = -1, int block3 = -1);
+	void setLengthAt(int index, int length);
 	void setBLock1At(int index, int block1);
 	void setBLock2At(int index, int block2);
 	void setBLock3At(int index, int block3);
@@ -187,6 +200,7 @@ private:
 	LDisk mainDisk;
 	BitMap bitMap;
 	DescriptorBank descriptorBank;
+	std::stringstream ss;
 
 
 
@@ -195,6 +209,21 @@ public:
 	void printDirectory();
 	int getFileDescriptorIndex(char* name);
 	void addFileToDirectory(char* name, int descriptorIndex);
+	void allocateSecondBlock(int descriptorIndex);
+	void allocateThirdBlock(int descriptorIndex);
+
+
+	int lseek(int index, int position);
+	int read(int index, std::deque<byte>& mem, int numBytes);
+	int write(int index, std::deque<byte>& mem, int numBytes);
+	void close(int index);
+	void destroy(char* name); // don't forget to dealocate directory blocks when the directory gets smaller
+	void save(std::string fileName);
+
+
+
+	SystemSimulation();
+	SystemSimulation(std::string fileName);
 	
 
 };
@@ -215,6 +244,7 @@ void BYTES_TO_INT_TEST();
 void INT_TO_BYTES_TEST();
 void DESCRIPTOR_BANK_TEST();
 void OPEN_FILE_TABLE_TEST();
+void SYSTEM_SIMULATION_TEST();
 
 
 
