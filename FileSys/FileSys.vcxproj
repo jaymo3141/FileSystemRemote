@@ -17,6 +17,9 @@
     <ClCompile Include="file.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Debug\input.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{60F935C2-FF12-4F77-8639-772E9B7085A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

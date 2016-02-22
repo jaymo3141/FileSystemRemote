@@ -12,9 +12,11 @@
 #include <deque>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
+#include <ios>
 
 typedef unsigned char byte;
-
+typedef std::string str;
 typedef std::list<byte>::iterator ITERATOR;
 
 
@@ -31,6 +33,8 @@ public:
 	Block(byte allBytes);
 	Block(const Block& B);
 	Block& operator=(const Block& right);
+
+	void printContents();
 
 };
 
@@ -133,8 +137,13 @@ private:
 public:
 
 	void saveMapToContainer();
+	void loadMapToContainer(const Block& map);
 	void setBit(int i, bool val);	
 	int getNextOpenBit();			//Returns -1 if an open bit is not found
+
+	void setLeastSignificantBits(int value);
+	void setMostSignificantBits(int value);
+
 
 	Block getBitMapBlock(){ return bitMapContainer; }
 	void printMap();
@@ -196,29 +205,44 @@ public:
 class SystemSimulation
 {
 private:
-	OpenFileTable oft;
 	LDisk mainDisk;
-	BitMap bitMap;
 	DescriptorBank descriptorBank;
-	std::stringstream ss;
+	OpenFileTable oft;
+	BitMap bitMap;
+
+	 
 
 
 
 
 public:
+
+	std::stringstream ss;
+
+
+
+
 	void printDirectory();
-	int getFileDescriptorIndex(char* name);
-	void addFileToDirectory(char* name, int descriptorIndex);
+	int getFileDescriptorIndex(const char* name);
+	void addFileToDirectory(const char* name, int descriptorIndex);
+	void removeFromDirectory(const char* name);
+
 	void allocateSecondBlock(int descriptorIndex);
 	void allocateThirdBlock(int descriptorIndex);
+	void swapBlocks(int openFileIndex, int BlockX, int BlockY);
 
 
 	int lseek(int index, int position);
 	int read(int index, std::deque<byte>& mem, int numBytes);
 	int write(int index, std::deque<byte>& mem, int numBytes);
-	void close(int index);
-	void destroy(char* name); // don't forget to dealocate directory blocks when the directory gets smaller
-	void save(std::string fileName);
+	int close(int index);
+	int save(std::string fileName);
+	int init();
+	int init(std::string fileName);
+	int open(const char* name);
+	int create(const char* name); //returns -1 if error
+	int destroy(const char* name); // don't forget to dealocate directory blocks when the directory gets smaller
+
 
 
 
