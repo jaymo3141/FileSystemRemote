@@ -12,6 +12,7 @@ int main(){
 	str inputStr;
 
 
+
 	//Tokenize the input file and put each token into a vector
 	fin.open("input.txt");
 
@@ -91,8 +92,10 @@ int main(){
 
 			int index = sys.open(arg1);
 
-			sys.ss << arg1 << " opened " << index << "\n";
-
+			if (index != -1)
+			{
+				sys.ss << arg1 << " opened " << index << "\n";
+			}
 
 			i++;
 			if (i >= commands.size())
@@ -105,9 +108,8 @@ int main(){
 			i++;
 			int arg1 = std::stoi(commands[i]);
 
-			sys.close(arg1);
-
-			sys.ss << arg1 << " closed\n";
+			if(sys.close(arg1) == 0)
+				sys.ss << arg1 << " closed\n";
 
 			i++;
 			if (i >= commands.size())
@@ -126,13 +128,14 @@ int main(){
 
 			std::deque<byte> buf;
 
-			sys.read(arg1, buf, arg2);
+			if (sys.read(arg1, buf, arg2) == 0)
+			{
 
-			for (int i = 0; i < buf.size(); i++)
-				sys.ss << buf[i];
+				for (int i = 0; i < buf.size(); i++)
+					sys.ss << buf[i];
 
-			sys.ss << "\n";
-
+				sys.ss << "\n";
+			}
 
 			i++;
 			if (i >= commands.size())
@@ -156,14 +159,18 @@ int main(){
 
 			std::deque<byte> buf;
 
+			
 			for (int i = 0; i < arg3; i++)
 			{
 				buf.push_back(arg2);
 			}
 
-			sys.ss << sys.write(arg1, buf, arg3) << " bytes written\n";
+			int written = sys.write(arg1, buf, arg3);
 
+			if (written == 0)
+				sys.ss << written << " bytes written\n";
 
+			
 			i++;
 
 			if (i >= commands.size())
@@ -181,8 +188,10 @@ int main(){
 			i++;
 			int arg2 = std::stoi(commands[i]);
 
-			sys.ss << "Position is " << sys.lseek(arg1, arg2) << "\n";
-
+			if (sys.lseek(arg1, arg2) == 0)
+			{
+				sys.ss << "Position is " << arg2  << "\n";
+			}
 			 
 			i++;
 			if (i >= commands.size())

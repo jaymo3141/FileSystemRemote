@@ -494,20 +494,30 @@ void SystemSimulation::printDirectory()
 
 		read(0, cache, 8);
 
-		ss << cache[0] << cache[1] << cache[2] << cache[3] << std::endl;
+		ss << cache[0] << cache[1] << cache[2] << cache[3] << " ";
 
 
 		cache.clear();
 	}
+
+	ss << "\n";
 	
 }
 
 int SystemSimulation::lseek(int index, int position)
 {
+	//Check
+	//1. seeking an emtpy index
+	//2. seeking past the end of file
+	if (oft.getFileLengthAt(index) == -1)
+	{
+		ss << "error\n";
+		return -1;
+	}
 
 	if (position > oft.getFileLengthAt(index))
 	{	
-		ss << "error";
+		ss << "error\n";
 		return -1;
 	}
 
@@ -561,6 +571,17 @@ int SystemSimulation::lseek(int index, int position)
 
 int SystemSimulation::read(int index, std::deque<byte>& mem, int numBytes)
 {
+
+	//Check
+	//1. reading an emtpy index
+	if (oft.getFileLengthAt(index) == -1)
+	{
+		ss << "error\n";
+		return -1;
+	}
+		 
+
+
 	int pos{ oft.getPositionAt(index) };
 	int bytesRead{ 0 };
 	int actualBytesToRead{0};
@@ -604,6 +625,16 @@ int SystemSimulation::read(int index, std::deque<byte>& mem, int numBytes)
 
 int SystemSimulation::write(int index, std::deque<byte>& mem, int numBytes)
 {
+
+	//Check
+	//1. writing an emtpy index
+	if (oft.getFileLengthAt(index) == -1)
+	{
+		ss << "error\n";
+		return -1;
+	}
+
+
 
 	int pos{ oft.getPositionAt(index) };
 	int bytesWritten{ 0 };
@@ -724,7 +755,7 @@ int SystemSimulation::save(std::string fileName)
 
 	std::ofstream fout;
 
-	fout.open(fileName);
+	fout.open(fileName, std::ios::binary);
 
 	//close all files
 	for (int i = 3; i >= 0; i--)
@@ -746,17 +777,22 @@ int SystemSimulation::save(std::string fileName)
 	}
 
 	Block temp;
+	char out[4096];
+	int k{ 0 };
 
 	for (int i = 0; i < 64; i++)
 	{
 		mainDisk.read_block(i, temp);
-		for (int j = 0; j < 64; j++)
+		for (int j = 0; j < 64; j++, k++)
 		{
 
-			fout << temp[j];
+			out[k] = temp[j];
 
 		}
 	}
+
+	fout.write(out, 4096);
+
 
 	return 0;
 
