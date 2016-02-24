@@ -7,3 +7,77 @@ sk 1 55
 rd 1 10
 dr
 sv disk0.txt
+
+in disk0.txt
+op foo
+rd 1 3
+cr foo
+cl 1
+dr
+
+in
+cr abc
+cr efg
+op abc
+op efg
+wr 1 y 50
+sk 1 40
+rd 1 10
+sk 1 100
+dr
+cl 2
+dr
+
+in
+cr foo
+cr boo
+cl 1
+cl 2
+de foo
+de boo
+rd 1 10
+rd 2 10
+wr 1 x 40
+wr 2 y 50
+dr
+
+in
+cr foo
+cr boo
+cr loo
+op foo
+op boo
+op loo
+wr 1 y 100
+wr 2 x 64
+wr 3 b 128
+sk 1 0
+sk 2 0
+sk 3 0
+rd 1 65
+rd 2 100
+rd 3 127
+dr
+sv disk0.txt
+
+in disk0.txt
+op foo
+op boo
+op loo
+rd 1 20
+rd 2 40
+rd 3 200
+cl 1
+cl 3
+dr
+de foo
+de boo
+op foo
+op boo
+
+in
+cr foo
+cr boo
+de foo
+de boo
+dr

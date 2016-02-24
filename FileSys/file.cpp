@@ -395,7 +395,7 @@ void LDisk::read_block(int i, Block& p){
 
 }
 
-void LDisk::write_block(int i, Block& p){
+void LDisk::write_block(int i, const Block& p){
 
 	//Write block at pointer p into block i
 	disk[i] = p;
@@ -429,10 +429,37 @@ int SystemSimulation::getFileDescriptorIndex(const char* name)
 		read(0, cache, 8);
 
 
-		if (cache[0] == *name &&
-			cache[1] == *(name + 1) &&
-			cache[2] == *(name + 2) &&
-			cache[3] == *(name + 3))
+		char a = *name;
+		char b;
+		char c;
+		char d;
+
+		if(!((*(name + 1) >= 65) && (*(name + 1) <= 90) || (*(name + 1) >= 97) && (*(name + 1) <= 122)))
+		{
+			b = ' ';
+		}
+		else
+			b = *(name + 1);
+
+		if(!((*(name + 2) >= 65) && (*(name + 2) <= 90) || (*(name + 2) >= 97) && (*(name + 2) <= 122)))
+		{
+			c = ' ';
+		}
+		else
+			c = *(name + 2);
+		
+		if(!((*(name + 3) >= 65) && (*(name + 3) <= 90) || (*(name + 3) >= 97) && (*(name + 3) <= 122)))
+		{
+			d = ' ';
+		}
+		else
+			d = *(name + 3);
+
+
+		if (cache[0] == a &&
+			cache[1] == b &&
+			cache[2] == c &&
+			cache[3] == d)
 		{
 			lseek(0, dir.fileLength);
 			return BytesToInt(cache[4], cache[5], cache[6], cache[7]);
@@ -458,14 +485,35 @@ void SystemSimulation::addFileToDirectory(const char* name, int descriptorIndex)
 		return;
 
 	}
+
+
 	
 
 	std::deque<byte> cache;
 		
 	cache.push_back(*name);
-	cache.push_back(*(name + 1));
-	cache.push_back(*(name + 2));
-	cache.push_back(*(name + 3));
+
+	if(!((*(name + 1) >= 65) && (*(name + 1) <= 90) || (*(name + 1) >= 97) && (*(name + 1) <= 122)))
+		{
+			cache.push_back(' ');
+		}
+	else	
+		cache.push_back(*(name + 1));
+
+	if(!((*(name + 2) >= 65) && (*(name + 2) <= 90) || (*(name + 2) >= 97) && (*(name + 2) <= 122)))
+		{
+			cache.push_back(' ');
+		}
+	else	
+		cache.push_back(*(name + 2));
+
+	if(!((*(name + 3) >= 65) && (*(name + 3) <= 90) || (*(name + 3) >= 97) && (*(name + 3) <= 122)))
+		{
+			cache.push_back(' ');
+		}
+	else	
+		cache.push_back(*(name + 3));
+	
 
 	byte b1{0}, b2{0}, b3{0}, b4{0};
 
@@ -889,14 +937,42 @@ void SystemSimulation::removeFromDirectory(const char* name)
 	read(0, cache, dir.fileLength);
 	
 
+	char a = *name;
+	char b;
+	char c;
+	char d;
+
+	if (!((*(name + 1) >= 65) && (*(name + 1) <= 90) || (*(name + 1) >= 97) && (*(name + 1) <= 122)))
+	{
+		b = ' ';
+	}
+	else
+		b = *(name + 1);
+
+	if (!((*(name + 2) >= 65) && (*(name + 2) <= 90) || (*(name + 2) >= 97) && (*(name + 2) <= 122)))
+	{
+		c = ' ';
+	}
+	else
+		c = *(name + 2);
+
+	if (!((*(name + 3) >= 65) && (*(name + 3) <= 90) || (*(name + 3) >= 97) && (*(name + 3) <= 122)))
+	{
+		d = ' ';
+	}
+	else
+		d = *(name + 3);
+
+
+
 	for (int i = 0; i < dir.fileLength; i+=8){
 
 
 
-		if (cache[i] == *name &&
-			cache[i + 1] == *(name + 1) &&
-			cache[i + 2] == *(name + 2) &&
-			cache[i + 3] == *(name + 3))
+		if (cache[i] == a &&
+			cache[i + 1] == b &&
+			cache[i + 2] == c &&
+			cache[i + 3] == d)
 		{
 			for (int k = i; k < dir.fileLength - 8; k+=8)
 			{

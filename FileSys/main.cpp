@@ -12,7 +12,7 @@ int main(){
 	str inputStr;
 
 
-
+	///media/jesse/SONY/input-unix.txt
 	//Tokenize the input file and put each token into a vector
 	fin.open("input.txt");
 
@@ -27,6 +27,8 @@ int main(){
 
 	fin.close();
 
+
+	///media/jesse/SONY/74779194.txt
 	fout.open("74779194.txt");
 
 	//for (str s : commands){
@@ -43,6 +45,8 @@ int main(){
 
 	//Process the commands
 	for (int i = 0; i < commands.size();){
+
+		std::cout<<commands[i] << "\n";
 
 		//Create
 		if (commands[i] == "cr")
@@ -128,7 +132,7 @@ int main(){
 
 			std::deque<byte> buf;
 
-			if (sys.read(arg1, buf, arg2) == 0)
+			if (sys.read(arg1, buf, arg2) != -1)
 			{
 
 				for (int i = 0; i < buf.size(); i++)
@@ -167,7 +171,7 @@ int main(){
 
 			int written = sys.write(arg1, buf, arg3);
 
-			if (written == 0)
+			if (written != -1)
 				sys.ss << written << " bytes written\n";
 
 			
@@ -188,7 +192,7 @@ int main(){
 			i++;
 			int arg2 = std::stoi(commands[i]);
 
-			if (sys.lseek(arg1, arg2) == 0)
+			if (sys.lseek(arg1, arg2) != -1)
 			{
 				sys.ss << "Position is " << arg2  << "\n";
 			}

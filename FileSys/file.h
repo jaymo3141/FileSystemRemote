@@ -48,7 +48,7 @@ private:
 
 public: 
 	void read_block(int i, Block& p);
-	void write_block(int i, Block& p);
+	void write_block(int i, const Block& p);
 
 	
 
